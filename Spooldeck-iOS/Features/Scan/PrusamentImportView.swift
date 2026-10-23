@@ -68,7 +68,7 @@ struct PrusamentImportView: View {
                 }
                 if let existing = preview.existingFilament {
                     Label("Adds a spool to “\(existing.name)”", systemImage: "checkmark.circle")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Theme.primary)
                 } else {
                     Label("Creates a new filament", systemImage: "plus.circle")
                         .foregroundStyle(.secondary)
@@ -114,7 +114,7 @@ struct PrusamentImportView: View {
             }
 
             if let importError {
-                Section { Text(importError).foregroundStyle(.red) }
+                Section { Text(importError).foregroundStyle(Theme.destructive) }
             }
 
             Section {
@@ -130,6 +130,7 @@ struct PrusamentImportView: View {
                 .disabled(isImporting)
             }
         }
+        .themedForm()
     }
 
     private func load() async {

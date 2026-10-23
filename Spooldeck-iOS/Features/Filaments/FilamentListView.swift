@@ -14,53 +14,39 @@ struct FilamentListView: View {
 
     var body: some View {
         LoadingView(value: filaments, error: error, retry: load) { filaments in
-            if filaments.isEmpty {
-                if !query.isEmpty {
-                    ContentUnavailableView.search(text: query)
-                } else {
-                    ContentUnavailableView {
-                        Label(showArchived ? "No archived filaments" : "No filaments yet", systemImage: "swatchpalette")
-                    } description: {
-                        Text("A filament is a product, like “Prusament PLA Galaxy Black”. Spools are the physical rolls of it.")
-                    } actions: {
-                        if !showArchived {
-                            Button("Add filament") { showNew = true }.buttonStyle(.borderedProminent)
+            Screen {
+                filterBar
+                if filaments.isEmpty {
+                    if !query.isEmpty {
+                        EmptyState(systemImage: "magnifyingglass", title: "No results for “\(query)”", message: "Check the spelling or try a different search.")
+                    } else {
+                        EmptyState(
+                            systemImage: "swatchpalette",
+                            title: showArchived ? "No archived filaments" : "No filaments yet",
+                            message: "A filament is a product, like “Prusament PLA Galaxy Black”. Spools are the physical rolls of it."
+                        ) {
+                            if !showArchived {
+                                Button("Add your first filament") { showNew = true }.buttonStyle(.spoolPrimary)
+                            }
                         }
                     }
-                }
-            } else {
-                List(filaments) { filament in
-                    NavigationLink(value: Route.filament(id: filament.id)) {
-                        FilamentRowView(filament: filament)
+                } else {
+                    DividedRows(data: filaments) { filament in
+                        NavigationLink(value: Route.filament(id: filament.id)) {
+                            FilamentRowView(filament: filament)
+                        }
+                        .buttonStyle(RowLinkStyle())
+                        .accessibilityIdentifier("filamentRow")
                     }
+                    .cardStyle(padding: 0)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 }
-                .listStyle(.plain)
             }
         }
         .navigationTitle(showArchived ? "Archived" : "Filaments")
         .searchable(text: $query, prompt: "Name, color, brand, material")
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Menu {
-                    Toggle("Show archived", isOn: $showArchived)
-                    if !materials.isEmpty {
-                        Picker("Material", selection: $materialId) {
-                            Text("Any material").tag(Int?.none)
-                            ForEach(materials) { Text($0.name).tag(Int?.some($0.id)) }
-                        }
-                        .pickerStyle(.menu)
-                    }
-                    if !brands.isEmpty {
-                        Picker("Brand", selection: $brandId) {
-                            Text("Any brand").tag(Int?.none)
-                            ForEach(brands) { Text($0.name).tag(Int?.some($0.id)) }
-                        }
-                        .pickerStyle(.menu)
-                    }
-                } label: {
-                    let filtered = showArchived || materialId != nil || brandId != nil
-                    Image(systemName: filtered ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button("Add filament", systemImage: "plus") { showNew = true }
             }
         }
@@ -74,6 +60,43 @@ struct FilamentListView: View {
         }
         .task { await loadFilterOptions() }
         .refreshable { await load() }
+    }
+
+    private var filterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                if !materials.isEmpty {
+                    Menu {
+                        Picker("Material", selection: $materialId) {
+                            Text("All materials").tag(Int?.none)
+                            ForEach(materials) { Text($0.name).tag(Int?.some($0.id)) }
+                        }
+                    } label: {
+                        FilterChip(title: materials.first { $0.id == materialId }?.name ?? "All materials", isActive: materialId != nil)
+                    }
+                }
+                if !brands.isEmpty {
+                    Menu {
+                        Picker("Brand", selection: $brandId) {
+                            Text("All brands").tag(Int?.none)
+                            ForEach(brands) { Text($0.name).tag(Int?.some($0.id)) }
+                        }
+                    } label: {
+                        FilterChip(title: brands.first { $0.id == brandId }?.name ?? "All brands", isActive: brandId != nil)
+                    }
+                }
+                Menu {
+                    Picker("Show", selection: $showArchived) {
+                        Text("Active").tag(false)
+                        Text("Archived").tag(true)
+                    }
+                } label: {
+                    FilterChip(title: showArchived ? "Archived" : "Active", isActive: showArchived)
+                }
+            }
+            .padding(.vertical, 1)
+        }
+        .scrollClipDisabled()
     }
 
     private func load() async {
@@ -106,33 +129,47 @@ struct FilamentRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             ColorSwatch(hex: filament.colorHex)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(filament.title).font(.headline).lineLimit(1)
-                    Spacer()
-                    Text(Format.grams(filament.remaining))
-                        .font(.subheadline.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(filament.activeCount > 0 ? .primary : .secondary)
-                }
-                Text(filament.subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                HStack(spacing: 10) {
-                    let nozzle = Format.range(filament.nozzleMin, filament.nozzleMax)
-                    if nozzle != "—" { Label(nozzle, systemImage: "flame") }
-                    let bed = Format.range(filament.bedMin, filament.bedMax)
-                    if bed != "—" { Label(bed, systemImage: "square.3.layers.3d.bottom.filled") }
-                    Spacer()
-                    Text(filament.activeCount == 1 ? "1 spool" : "\(filament.activeCount) spools")
-                    if filament.spoolCount > filament.activeCount {
-                        Text("· \(filament.spoolCount - filament.activeCount) used up")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(filament.title)
+                    .font(.body.weight(.medium))
+                    .lineLimit(1)
+                Text(([filament.brandName, filament.materialName].compactMap { $0 } + ["\(Format.field(filament.diameter)) mm"]).joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(Theme.mutedForeground)
+                    .lineLimit(1)
+                if let rating = filament.rating, rating > 0 {
+                    HStack(spacing: 2) {
+                        Image(systemName: "star.fill")
+                        Text("\(rating)")
                     }
+                    .font(.caption2)
+                    .foregroundStyle(Theme.mutedForeground)
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .labelStyle(.titleAndIcon)
-                RatingView(rating: filament.rating)
             }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(Format.grams(max(0, filament.remaining)))
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                Text("\(filament.activeCount) in stock" + (filament.spoolCount > filament.activeCount ? " · \(filament.spoolCount - filament.activeCount) used up" : ""))
+                    .font(.caption)
+                    .foregroundStyle(Theme.mutedForeground)
+                    .lineLimit(1)
+            }
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, Theme.spacing)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Highlight for rows inside a card, like a native cell.
+struct RowLinkStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? Theme.muted : Color.clear)
     }
 }

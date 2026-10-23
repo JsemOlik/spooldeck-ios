@@ -104,9 +104,10 @@ struct SpoolFormView: View {
             }
 
             if let error {
-                Section { Text(error).foregroundStyle(.red) }
+                Section { Text(error).foregroundStyle(Theme.destructive) }
             }
         }
+        .themedForm()
         .navigationTitle(isCreate ? "New spool" : "Edit spool")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

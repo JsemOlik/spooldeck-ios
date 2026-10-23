@@ -22,7 +22,6 @@ struct FilamentDetailView: View {
         }
         .navigationTitle(detail?.filament.title ?? "Filament")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { if let detail { toolbar(detail) } }
         .task(id: app.dataVersion) { await load() }
         .refreshable { await load() }
         .sheet(item: $sheet) { sheet in
@@ -60,126 +59,155 @@ struct FilamentDetailView: View {
         let averagePerKg: Double? = priced.isEmpty ? nil
             : priced.reduce(0) { $0 + ($1.price! / max($1.initialWeight, 1)) * 1000 } / Double(priced.count)
 
-        List {
-            Section {
-                HStack(spacing: 16) {
-                    if let image = f.imageUrl, let url = URL(string: image) {
-                        AsyncImage(url: url) { phase in
-                            if let image = phase.image {
-                                image.resizable().scaledToFill()
-                            } else {
-                                ColorSwatch(hex: f.colorHex, size: 72)
-                            }
+        Screen {
+            HStack(alignment: .top, spacing: 16) {
+                if let image = f.imageUrl, let url = URL(string: image) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            ColorSwatch(hex: f.colorHex, size: 72)
                         }
-                        .frame(width: 72, height: 72)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    } else {
-                        ColorSwatch(hex: f.colorHex, size: 72)
                     }
-                    VStack(alignment: .leading, spacing: 4) {
-                        if !f.subtitle.isEmpty {
-                            Text(f.subtitle).font(.subheadline).foregroundStyle(.secondary)
+                    .frame(width: 72, height: 72)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                } else {
+                    ColorSwatch(hex: f.colorHex, size: 72)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(([f.brand?.name, f.material?.name].compactMap { $0 } + ["\(Format.field(f.diameter)) mm"]).joined(separator: " · "))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.mutedForeground)
+                    Text(f.title).font(.title.weight(.semibold)).lineLimit(2)
+                    HStack(spacing: 8) {
+                        if f.colorName != nil {
+                            Text(f.name).font(.subheadline).foregroundStyle(Theme.mutedForeground).lineLimit(1)
                         }
-                        Text(f.title).font(.title2.bold())
-                        if f.colorName != nil { Text(f.name).font(.caption).foregroundStyle(.secondary) }
                         RatingView(rating: f.rating)
-                        if f.archived {
-                            Text("Archived").font(.caption.weight(.semibold)).foregroundStyle(.orange)
-                        }
+                        if f.archived { OutlineTag(text: "Archived") }
                     }
                 }
-                Button("Add spool", systemImage: "plus.circle") { sheet = .newSpool }
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 4)
+
+            HStack(spacing: 8) {
+                Button("Add spool", systemImage: "plus") { sheet = .newSpool }
+                    .buttonStyle(.spool(.primary, fullWidth: true))
                 if let link = f.productUrl, let url = URL(string: link) {
-                    Link(destination: url) { Label("Product page", systemImage: "safari") }
+                    Link(destination: url) { Label("Product page", systemImage: "arrow.up.right.square") }
+                        .buttonStyle(.spool(.outline, fullWidth: true))
+                }
+                actionsMenu(d)
+            }
+
+            Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                GridRow {
+                    StatCard(title: "In stock", value: Format.grams(inStock), detail: active.count == 1 ? "1 spool" : "\(active.count) spools")
+                    StatCard(title: "Used so far", value: Format.grams(usedSoFar), detail: printUsage.count == 1 ? "1 print logged" : "\(printUsage.count) prints logged")
+                }
+                GridRow {
+                    StatCard(title: "Avg price", value: averagePerKg.map { Format.money($0, currency: currency) } ?? "—", detail: "per kg")
+                    StatCard(title: "Spools bought", value: "\(d.spools.count)", detail: d.spools.first?.vendor.map { "last from \($0.name)" } ?? " ")
                 }
             }
 
-            Section("Stats") {
-                LabeledContent("In stock", value: "\(Format.grams(inStock)) · \(active.count) spool\(active.count == 1 ? "" : "s")")
-                LabeledContent("Used so far", value: "\(Format.grams(usedSoFar)) · \(printUsage.count) print\(printUsage.count == 1 ? "" : "s")")
-                if let averagePerKg {
-                    LabeledContent("Average price", value: "\(Format.money(averagePerKg, currency: currency)) / kg")
-                }
-                LabeledContent("Spools bought", value: "\(d.spools.count)")
-            }
-
-            Section {
-                ForEach(d.notes) { note in
-                    NoteRow(note: note)
-                        .swipeActions {
-                            Button("Delete", systemImage: "trash", role: .destructive) {
-                                Task { await deleteNote(note) }
-                            }
-                        }
-                }
+            Card("Notes") {
+            } trailing: {
                 Button("Add note", systemImage: "square.and.pencil") { sheet = .addNote }
-            } header: {
-                Text("Notes")
-            }
-
-            if !d.spools.isEmpty {
-                Section("Spools") {
-                    ForEach(d.spools) { spool in
-                        NavigationLink(value: Route.spool(id: spool.id)) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text("#\(spool.code)").monospaced()
-                                    StatusBadge(status: spool.status)
-                                    Spacer()
-                                    Text(Format.grams(spool.remaining)).monospacedDigit()
-                                }
-                                HStack {
-                                    if let vendor = spool.vendor?.name { Text(vendor) }
-                                    if let price = spool.price { Text(Format.money(price, currency: spool.currency ?? currency)) }
-                                    if let date = spool.purchaseDate { Text(Format.day(date)) }
-                                    if let location = spool.location { Label(location, systemImage: "mappin") }
-                                }
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                            }
+                    .buttonStyle(.spool(.outline, compact: true))
+            } content: {
+                if d.notes.isEmpty {
+                    Text("No notes yet.").font(.subheadline).foregroundStyle(Theme.mutedForeground)
+                } else {
+                    VStack(spacing: 10) {
+                        ForEach(d.notes) { note in
+                            NoteRow(note: note) { Task { await deleteNote(note) } }
                         }
                     }
                 }
             }
 
-            Section("Print settings") {
-                LabeledContent("Nozzle", value: Format.range(f.effectiveNozzle.0, f.effectiveNozzle.1))
-                LabeledContent("Bed", value: Format.range(f.effectiveBed.0, f.effectiveBed.1))
-                InfoRow("Max speed", f.maxSpeed.map { "\($0) mm/s" })
-                InfoRow("Fan", f.fan)
-                InfoRow("Drying", f.dryingTemp.map { t in "\(t)°C" + (f.dryingHours.map { " · \(Format.field($0)) h" } ?? "") })
-                InfoRow("Density", f.material.map { "\(Format.field($0.density)) g/cm³" })
+            Card("Spools & purchases") {
+                if d.spools.isEmpty {
+                    Text("No spools yet.").font(.subheadline).foregroundStyle(Theme.mutedForeground)
+                } else {
+                    DividedRows(data: d.spools) { spool in
+                        NavigationLink(value: Route.spool(id: spool.id)) {
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack(spacing: 8) {
+                                        Text("#\(spool.code)").font(.subheadline.weight(.medium)).monospaced()
+                                        StatusBadge(status: spool.status)
+                                    }
+                                    Text([spool.purchaseDate.map { Format.day($0) }, spool.vendor?.name, spool.location].compactMap { $0 }.joined(separator: " · "))
+                                        .font(.caption)
+                                        .foregroundStyle(Theme.mutedForeground)
+                                        .lineLimit(1)
+                                }
+                                Spacer(minLength: 8)
+                                if let price = spool.price {
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        Text(Format.money(price, currency: spool.currency ?? currency)).font(.subheadline)
+                                        Text("\(Format.money(price / max(spool.initialWeight, 1) * 1000, currency: spool.currency ?? currency))/kg")
+                                            .font(.caption)
+                                            .foregroundStyle(Theme.mutedForeground)
+                                    }
+                                    .monospacedDigit()
+                                }
+                                Text(Format.grams(max(0, spool.remaining)))
+                                    .font(.subheadline.weight(.semibold))
+                                    .monospacedDigit()
+                                    .frame(minWidth: 64, alignment: .trailing)
+                            }
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
 
-            Section("Spool specs") {
-                LabeledContent("Diameter", value: "\(Format.field(f.diameter)) mm")
-                LabeledContent("Net weight", value: Format.grams(f.nominalWeight))
-                InfoRow("Empty spool", f.spoolWeight.map { Format.grams($0) })
+            Card("Print settings") {
+                SpecList(items: [
+                    ("Nozzle", Format.range(f.effectiveNozzle.0, f.effectiveNozzle.1)),
+                    ("Bed", Format.range(f.effectiveBed.0, f.effectiveBed.1)),
+                    ("Drying", f.dryingTemp.map { t in "\(t) °C" + (f.dryingHours.map { " · \(Format.field($0)) h" } ?? "") }),
+                    ("Max speed", f.maxSpeed.map { "\($0) mm/s" }),
+                    ("Fan", f.fan),
+                    ("Density", f.material.map { "\(Format.field($0.density)) g/cm³" }),
+                ])
+            }
+
+            Card("Spool") {
+                SpecList(items: [
+                    ("Net weight", Format.grams(f.nominalWeight)),
+                    ("Empty spool", f.spoolWeight.map { Format.grams($0) }),
+                    ("Diameter", "\(Format.field(f.diameter)) mm"),
+                    ("Color", f.colorHex),
+                ])
             }
         }
     }
 
-    @ToolbarContentBuilder
-    private func toolbar(_ d: FilamentDetail) -> some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Button("Edit", systemImage: "pencil") { sheet = .edit }
-                Button("Add spool", systemImage: "plus.circle") { sheet = .newSpool }
-                if !d.spools.isEmpty {
-                    Button("Print labels", systemImage: "printer") {
-                        app.labelSpoolIds = d.spools.filter { $0.status.isActive }.map(\.id)
-                    }
+    private func actionsMenu(_ d: FilamentDetail) -> some View {
+        Menu {
+            Button("Edit", systemImage: "pencil") { sheet = .edit }
+            if !d.spools.isEmpty {
+                Button("Print labels", systemImage: "tag") {
+                    app.labelSpoolIds = d.spools.filter { $0.status.isActive }.map(\.id)
                 }
-                Button(d.filament.archived ? "Unarchive" : "Archive", systemImage: "archivebox") {
-                    Task { await setArchived(!d.filament.archived) }
-                }
-                Divider()
-                Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
-            } label: {
-                Image(systemName: "ellipsis.circle")
             }
+            Button(d.filament.archived ? "Unarchive" : "Archive", systemImage: "archivebox") {
+                Task { await setArchived(!d.filament.archived) }
+            }
+            Divider()
+            Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+        } label: {
+            IconButtonLabel(systemImage: "ellipsis")
         }
+        .foregroundStyle(.primary)
+        .accessibilityLabel("More actions")
     }
 
     private func load() async {

@@ -16,6 +16,19 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
+                HStack(spacing: 12) {
+                    LogoMark(size: 44)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Spooldeck").font(.title3.weight(.semibold))
+                        Text([me?.username ?? app.username, app.serverURL?.host()].compactMap { $0 }.joined(separator: " · "))
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.mutedForeground)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            Section {
                 HStack {
                     Text("Currency")
                     Spacer()
@@ -86,6 +99,7 @@ struct SettingsView: View {
                 Text("Backups and restores, and the label designer's advanced options, are available in the web app.")
             }
         }
+        .themedForm()
         .navigationTitle("Settings")
         .task(id: app.dataVersion) { await load() }
         .refreshable { await load() }
@@ -155,9 +169,10 @@ struct ChangePasswordView: View {
                 FieldErrorText(errors: fieldErrors, field: "confirm")
             } footer: {
                 Text(error ?? "At least 10 characters. Other devices will be signed out.")
-                    .foregroundStyle(error == nil ? Color.secondary : Color.red)
+                    .foregroundStyle(error == nil ? Color.secondary : Theme.destructive)
             }
         }
+        .themedForm()
         .navigationTitle("Change password")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

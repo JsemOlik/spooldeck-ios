@@ -28,56 +28,74 @@ struct ScanView: View {
     }
 
     var body: some View {
-        List {
-            Section {
-                ZStack {
-                    if scannerAvailable {
-                        QRScannerView(isActive: isVisible && path.isEmpty && !isResolving) { text in
-                            handleScan(text)
-                        }
-                    } else {
-                        ContentUnavailableView {
-                            Label("Camera unavailable", systemImage: "camera")
-                        } description: {
-                            Text(DataScannerViewController.isSupported
-                                 ? "Allow camera access in Settings to scan spool QR codes."
-                                 : "This device can't scan. Paste a link or type a code below.")
-                        }
+        Screen {
+            ZStack {
+                if scannerAvailable {
+                    QRScannerView(isActive: isVisible && path.isEmpty && !isResolving) { text in
+                        handleScan(text)
                     }
-                    if isResolving {
-                        ProgressView()
-                            .controlSize(.large)
-                            .padding()
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                } else {
+                    VStack(spacing: 10) {
+                        Image(systemName: "camera")
+                            .font(.system(size: 32, weight: .light))
+                            .foregroundStyle(Theme.mutedForeground)
+                        Text("Camera unavailable").font(.headline)
+                        Text(DataScannerViewController.isSupported
+                             ? "Allow camera access in Settings to scan spool QR codes."
+                             : "This device can't scan. Paste a link or type a code below.")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.mutedForeground)
+                            .multilineTextAlignment(.center)
                     }
+                    .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Theme.muted.opacity(0.5))
                 }
-                .frame(height: 320)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-            } footer: {
-                Text("Point the camera at a Prusament spool QR code or a Spooldeck label.")
+                ScanFrame()
+                    .allowsHitTesting(false)
+                if isResolving {
+                    ProgressView()
+                        .controlSize(.large)
+                        .padding()
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
             }
+            .frame(height: 340)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.border))
+
+            Text("Point the camera at a Prusament spool QR code or a Spooldeck label.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.mutedForeground)
 
             if let message {
-                Section {
-                    Label(message, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
-                }
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.destructive)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Theme.destructive.opacity(0.1), in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
             }
 
-            Section {
+            Card {
                 Toggle("Open “Log usage” after scan", isOn: $opensLogUsage)
+                    .font(.subheadline)
+                    .tint(Theme.primary)
             }
 
-            Section("Or enter it") {
-                HStack {
+            Card("Or enter it") {
+                HStack(spacing: 8) {
                     TextField("Link or 6-character code", text: $manualText)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                         .submitLabel(.go)
                         .onSubmit { Task { await resolve(manualText) } }
+                        .padding(.horizontal, 12)
+                        .frame(height: 44)
+                        .background(Theme.background, in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous).strokeBorder(Theme.input))
                     Button("Go") { Task { await resolve(manualText) } }
+                        .buttonStyle(.spoolPrimary)
                         .disabled(manualText.trimmingCharacters(in: .whitespaces).isEmpty || isResolving)
                 }
                 PasteButton(payloadType: String.self) { strings in
@@ -87,6 +105,7 @@ struct ScanView: View {
                         await resolve(text)
                     }
                 }
+                .tint(Theme.primary)
             }
         }
         .navigationTitle("Scan")
@@ -131,6 +150,23 @@ struct ScanView: View {
         } catch {
             message = error.localizedDescription
         }
+    }
+}
+
+/// Corner brackets over the camera, like the web scanner's viewfinder.
+private struct ScanFrame: View {
+    var body: some View {
+        let size: CGFloat = 200
+        let arm: CGFloat = 28
+        Path { p in
+            for (x, y, dx, dy) in [(0.0, 0.0, 1.0, 1.0), (size, 0, -1, 1), (0, size, 1, -1), (size, size, -1, -1)] {
+                p.move(to: CGPoint(x: x, y: y + dy * arm))
+                p.addLine(to: CGPoint(x: x, y: y))
+                p.addLine(to: CGPoint(x: x + dx * arm, y: y))
+            }
+        }
+        .stroke(Theme.primary, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+        .frame(width: size, height: size)
     }
 }
 

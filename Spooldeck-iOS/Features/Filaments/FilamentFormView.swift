@@ -110,9 +110,10 @@ struct FilamentFormView: View {
             }
 
             if let error {
-                Section { Text(error).foregroundStyle(.red) }
+                Section { Text(error).foregroundStyle(Theme.destructive) }
             }
         }
+        .themedForm()
         .navigationTitle(filament == nil ? "New filament" : "Edit filament")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

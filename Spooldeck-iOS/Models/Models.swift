@@ -2,14 +2,14 @@ import Foundation
 
 // Codable mirrors of the Spooldeck /api/v1 responses (Drizzle rows serialised as JSON).
 
-enum SpoolStatus: String, Codable, CaseIterable, Identifiable {
+nonisolated enum SpoolStatus: String, Codable, CaseIterable, Identifiable {
     case sealed, opened, empty, archived
     var id: String { rawValue }
     var label: String { rawValue.capitalized }
     var isActive: Bool { self == .sealed || self == .opened }
 }
 
-enum UsageKind: String, Codable {
+nonisolated enum UsageKind: String, Codable {
     case print, adjustment
     case weighIn = "weigh_in"
 
@@ -22,25 +22,25 @@ enum UsageKind: String, Codable {
     }
 }
 
-struct User: Codable, Hashable {
+nonisolated struct User: Codable, Hashable {
     let id: Int
     let username: String
 }
 
-struct Me: Codable {
+nonisolated struct Me: Codable {
     let id: Int
     let username: String
     let sessionCount: Int
 }
 
-struct LoginResponse: Codable {
+nonisolated struct LoginResponse: Codable {
     let token: String
     let expiresAt: Date
     let user: User
 }
 
 /// The generic `{ ok, id?, ids?, message? }` result of a mutation.
-struct MutationResult: Codable {
+nonisolated struct MutationResult: Codable {
     let ok: Bool?
     let id: Int?
     let ids: [Int]?
@@ -50,14 +50,14 @@ struct MutationResult: Codable {
 
 // MARK: - Catalog
 
-struct Brand: Codable, Hashable, Identifiable {
+nonisolated struct Brand: Codable, Hashable, Identifiable {
     let id: Int
     let name: String
     let website: String?
     var filaments: Int?
 }
 
-struct Vendor: Codable, Hashable, Identifiable {
+nonisolated struct Vendor: Codable, Hashable, Identifiable {
     let id: Int
     let name: String
     let url: String?
@@ -65,7 +65,7 @@ struct Vendor: Codable, Hashable, Identifiable {
     var spools: Int?
 }
 
-struct Material: Codable, Hashable, Identifiable {
+nonisolated struct Material: Codable, Hashable, Identifiable {
     let id: Int
     let name: String
     let density: Double
@@ -77,16 +77,16 @@ struct Material: Codable, Hashable, Identifiable {
     var filaments: Int?
 }
 
-struct Location: Codable, Hashable, Identifiable {
+nonisolated struct Location: Codable, Hashable, Identifiable {
     let name: String
     let spools: Int
     var id: String { name }
 }
 
-struct ItemsResponse<T: Codable>: Codable { let items: [T] }
-struct LocationsResponse: Codable { let locations: [Location] }
+nonisolated struct ItemsResponse<T: Codable>: Codable { let items: [T] }
+nonisolated struct LocationsResponse: Codable { let locations: [Location] }
 
-struct AppSettings: Codable {
+nonisolated struct AppSettings: Codable {
     var currency: String
     var lowStockGrams: Int
     var publicUrl: String
@@ -96,7 +96,7 @@ struct AppSettings: Codable {
 // MARK: - Spools
 
 /// A row of the spool list (`listSpools` in the web app).
-struct SpoolRow: Codable, Hashable, Identifiable {
+nonisolated struct SpoolRow: Codable, Hashable, Identifiable {
     let id: Int
     let code: String
     let status: SpoolStatus
@@ -124,9 +124,9 @@ struct SpoolRow: Codable, Hashable, Identifiable {
     var subtitle: String { [brandName, materialName].compactMap { $0 }.joined(separator: " · ") }
 }
 
-struct SpoolsResponse: Codable { let spools: [SpoolRow] }
+nonisolated struct SpoolsResponse: Codable { let spools: [SpoolRow] }
 
-struct UsageLog: Codable, Hashable, Identifiable {
+nonisolated struct UsageLog: Codable, Hashable, Identifiable {
     let id: Int
     let spoolId: Int
     let grams: Double
@@ -136,12 +136,12 @@ struct UsageLog: Codable, Hashable, Identifiable {
     let createdAt: Date
 }
 
-struct NoteSpoolRef: Codable, Hashable {
+nonisolated struct NoteSpoolRef: Codable, Hashable {
     let id: Int
     let code: String
 }
 
-struct FilamentNote: Codable, Hashable, Identifiable {
+nonisolated struct FilamentNote: Codable, Hashable, Identifiable {
     let id: Int
     let filamentId: Int
     let spoolId: Int?
@@ -150,7 +150,7 @@ struct FilamentNote: Codable, Hashable, Identifiable {
     let spool: NoteSpoolRef?
 }
 
-struct Filament: Codable, Hashable, Identifiable {
+nonisolated struct Filament: Codable, Hashable, Identifiable {
     let id: Int
     let brandId: Int?
     let materialId: Int?
@@ -183,7 +183,7 @@ struct Filament: Codable, Hashable, Identifiable {
     var density: Double { material?.density ?? 1.24 }
 }
 
-struct SpoolDetail: Codable, Hashable, Identifiable {
+nonisolated struct SpoolDetail: Codable, Hashable, Identifiable {
     let id: Int
     let filamentId: Int
     let code: String
@@ -217,7 +217,7 @@ struct SpoolDetail: Codable, Hashable, Identifiable {
     var currencyCode: String { currency ?? "EUR" }
 }
 
-struct DynamicKey: CodingKey {
+nonisolated struct DynamicKey: CodingKey {
     var stringValue: String
     var intValue: Int? { nil }
     init(_ string: String) { stringValue = string }
@@ -227,7 +227,7 @@ struct DynamicKey: CodingKey {
 
 // MARK: - Filaments
 
-struct FilamentRow: Codable, Hashable, Identifiable {
+nonisolated struct FilamentRow: Codable, Hashable, Identifiable {
     let id: Int
     let name: String
     let colorName: String?
@@ -249,9 +249,9 @@ struct FilamentRow: Codable, Hashable, Identifiable {
     var subtitle: String { [brandName, materialName].compactMap { $0 }.joined(separator: " · ") }
 }
 
-struct FilamentsResponse: Codable { let filaments: [FilamentRow] }
+nonisolated struct FilamentsResponse: Codable { let filaments: [FilamentRow] }
 
-struct FilamentOption: Codable, Hashable, Identifiable {
+nonisolated struct FilamentOption: Codable, Hashable, Identifiable {
     let id: Int
     let name: String
     let colorName: String?
@@ -268,15 +268,15 @@ struct FilamentOption: Codable, Hashable, Identifiable {
     }
 }
 
-struct FilamentOptionsResponse: Codable { let filaments: [FilamentOption] }
+nonisolated struct FilamentOptionsResponse: Codable { let filaments: [FilamentOption] }
 
-struct FilamentSpoolUsage: Codable, Hashable {
+nonisolated struct FilamentSpoolUsage: Codable, Hashable {
     let grams: Double
     let kind: UsageKind
     let createdAt: Date
 }
 
-struct FilamentSpool: Codable, Hashable, Identifiable {
+nonisolated struct FilamentSpool: Codable, Hashable, Identifiable {
     let id: Int
     let code: String
     let initialWeight: Double
@@ -293,7 +293,7 @@ struct FilamentSpool: Codable, Hashable, Identifiable {
     var remaining: Double { initialWeight - used }
 }
 
-struct FilamentDetail: Codable, Hashable, Identifiable {
+nonisolated struct FilamentDetail: Codable, Hashable, Identifiable {
     let filament: Filament
     let notes: [FilamentNote]
     let spools: [FilamentSpool]
@@ -311,7 +311,7 @@ struct FilamentDetail: Codable, Hashable, Identifiable {
 
 // MARK: - Dashboard
 
-struct RecentPrint: Codable, Hashable, Identifiable {
+nonisolated struct RecentPrint: Codable, Hashable, Identifiable {
     let id: Int
     let grams: Double
     let printName: String?
@@ -325,13 +325,13 @@ struct RecentPrint: Codable, Hashable, Identifiable {
     let brandName: String?
 }
 
-struct MaterialUsage: Codable, Hashable, Identifiable {
+nonisolated struct MaterialUsage: Codable, Hashable, Identifiable {
     let material: String
     let grams: Double
     var id: String { material }
 }
 
-struct Dashboard: Codable {
+nonisolated struct Dashboard: Codable {
     let spoolCount: Int
     let remaining: Double
     let value: Double
@@ -346,19 +346,19 @@ struct Dashboard: Codable {
 
 // MARK: - Scan & Prusament
 
-struct ScanResolution: Codable {
+nonisolated struct ScanResolution: Codable {
     let kind: String
     let id: Int?
     let url: String?
     let error: String?
 }
 
-struct PrusamentPrice: Codable, Hashable {
+nonisolated struct PrusamentPrice: Codable, Hashable {
     let amount: Double
     let currency: String
 }
 
-struct PrusamentPreview: Codable {
+nonisolated struct PrusamentPreview: Codable {
     struct FilamentInfo: Codable {
         let brand: String?
         let material: String?

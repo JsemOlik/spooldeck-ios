@@ -31,9 +31,10 @@ struct LogUsageSheet: View {
                 TextField("Note (optional)", text: $note, axis: .vertical)
             }
             if let error {
-                Section { Text(error).foregroundStyle(.red) }
+                Section { Text(error).foregroundStyle(Theme.destructive) }
             }
         }
+        .themedForm()
         .navigationTitle("Log usage")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -122,9 +123,10 @@ struct WeighInSheet: View {
                 TextField("Note (optional)", text: $note, axis: .vertical)
             }
             if let error {
-                Section { Text(error).foregroundStyle(.red) }
+                Section { Text(error).foregroundStyle(Theme.destructive) }
             }
         }
+        .themedForm()
         .navigationTitle("Weigh in")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -176,9 +178,10 @@ struct NoteComposer: View {
                     .lineLimit(4...12)
                     .focused($focused)
             } footer: {
-                if let error { Text(error).foregroundStyle(.red) }
+                if let error { Text(error).foregroundStyle(Theme.destructive) }
             }
         }
+        .themedForm()
         .navigationTitle("New note")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

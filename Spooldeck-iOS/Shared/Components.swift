@@ -24,59 +24,92 @@ extension Color {
     }
 }
 
+/// A filament-coloured disc with a spool hub, as on the web.
 struct ColorSwatch: View {
     let hex: String?
-    var size: CGFloat = 36
+    var size: CGFloat = 32
 
     var body: some View {
-        Circle()
-            .fill(Color(hex: hex) ?? Color.secondary.opacity(0.2))
-            .overlay(Circle().strokeBorder(.primary.opacity(0.15), lineWidth: 1))
-            .overlay {
-                if Color(hex: hex) == nil {
-                    Image(systemName: "questionmark")
-                        .font(.system(size: size * 0.4, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
+        ZStack {
+            Circle().fill(Color(hex: hex) ?? Theme.muted)
+            Circle().strokeBorder(.primary.opacity(0.15), lineWidth: 1)
+            Circle()
+                .fill(Theme.background.opacity(0.9))
+                .overlay(Circle().strokeBorder(.primary.opacity(0.1), lineWidth: 1))
+                .frame(width: size * 0.32, height: size * 0.32)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
 
+/// Status pill: Open is filled, Sealed is muted, the rest are outlined.
 struct StatusBadge: View {
     let status: SpoolStatus
 
-    var color: Color {
-        switch status {
-        case .sealed: .blue
-        case .opened: .green
-        case .empty: .orange
-        case .archived: .gray
-        }
-    }
-
     var body: some View {
-        Text(status.label)
+        Text(status == .opened ? "Open" : status.label)
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(color.opacity(0.15), in: Capsule())
-            .foregroundStyle(color)
+            .foregroundStyle(foreground)
+            .background(background, in: Capsule())
+            .overlay {
+                if !status.isActive { Capsule().strokeBorder(Theme.border) }
+            }
+    }
+
+    private var foreground: Color {
+        switch status {
+        case .opened: Theme.primaryForeground
+        case .sealed: .primary
+        case .empty, .archived: Theme.mutedForeground
+        }
+    }
+
+    private var background: Color {
+        switch status {
+        case .opened: Theme.primary
+        case .sealed: Theme.muted
+        case .empty, .archived: .clear
+        }
+    }
+}
+
+/// A small outlined tag ("Weigh-in", "Archived").
+struct OutlineTag: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .foregroundStyle(Theme.mutedForeground)
+            .overlay(Capsule().strokeBorder(Theme.border))
     }
 }
 
 struct RemainingBar: View {
     let initial: Double
     let remaining: Double
-    var lowStock: Double? = nil
+    var low = false
+    var height: CGFloat = 6
 
     var body: some View {
         let percent = Weights.remainingPercent(initial: initial, remaining: remaining)
-        let isLow = lowStock.map { remaining <= $0 } ?? false
-        ProgressView(value: percent, total: 100)
-            .tint(isLow ? .orange : .accentColor)
-            .accessibilityLabel("\(Int(percent)) percent remaining")
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.muted)
+                Capsule()
+                    .fill(low ? Theme.destructive : Theme.primary)
+                    .frame(width: proxy.size.width * percent / 100)
+            }
+        }
+        .frame(height: height)
+        .accessibilityElement()
+        .accessibilityLabel("Remaining filament")
+        .accessibilityValue("\(Int(percent)) percent")
     }
 }
 
@@ -90,14 +123,60 @@ struct RatingView: View {
                     Image(systemName: i <= rating ? "star.fill" : "star")
                 }
             }
-            .font(.caption2)
-            .foregroundStyle(.yellow)
+            .font(.caption)
+            .foregroundStyle(Color.orange)
+            .accessibilityElement()
             .accessibilityLabel("\(rating) of 5 stars")
         }
     }
 }
 
-/// A label/value row for detail screens. Hidden when the value is empty.
+/// Muted label on the left, value on the right; hidden when the value is empty (web: SpecList).
+struct SpecRow<Value: View>: View {
+    let label: String
+    @ViewBuilder let value: Value
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 16) {
+            Text(label).foregroundStyle(Theme.mutedForeground)
+            Spacer(minLength: 0)
+            value
+                .fontWeight(.medium)
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+        }
+        .font(.subheadline)
+    }
+}
+
+extension SpecRow where Value == Text {
+    init(_ label: String, _ value: String) {
+        self.label = label
+        self.value = Text(value)
+    }
+}
+
+struct SpecList: View {
+    let items: [(String, String?)]
+
+    var body: some View {
+        let visible = items.compactMap { label, value -> (String, String)? in
+            guard let value, !value.isEmpty, value != "—" else { return nil }
+            return (label, value)
+        }
+        if visible.isEmpty {
+            Text("Nothing recorded.").font(.subheadline).foregroundStyle(Theme.mutedForeground)
+        } else {
+            VStack(spacing: 10) {
+                ForEach(visible, id: \.0) { label, value in
+                    SpecRow(label, value)
+                }
+            }
+        }
+    }
+}
+
+/// A label/value row for grouped forms. Hidden when the value is empty.
 struct InfoRow: View {
     let label: String
     let value: String?
@@ -123,7 +202,7 @@ struct FieldErrorText: View {
         if let messages = errors[field], !messages.isEmpty {
             Text(messages.joined(separator: " "))
                 .font(.caption)
-                .foregroundStyle(.red)
+                .foregroundStyle(Theme.destructive)
         }
     }
 }
@@ -149,10 +228,11 @@ struct NumberField: View {
             TextField(title, text: $text, prompt: Text("—"))
                 .keyboardType(decimal ? .decimalPad : .numberPad)
                 .multilineTextAlignment(.trailing)
+                .monospacedDigit()
                 .frame(maxWidth: 140)
                 .accessibilityIdentifier(title)
             if let unit {
-                Text(unit).foregroundStyle(.secondary)
+                Text(unit).foregroundStyle(Theme.mutedForeground)
             }
         }
     }
@@ -175,11 +255,51 @@ struct SuggestingTextField: View {
                     }
                 } label: {
                     Image(systemName: "chevron.up.chevron.down")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.mutedForeground)
                 }
                 .accessibilityLabel("Choose \(title.lowercased())")
             }
         }
+    }
+}
+
+/// The web's dashed empty state: an icon, a line of text and optional actions.
+struct EmptyState<Actions: View>: View {
+    let systemImage: String
+    let title: String
+    var message: String? = nil
+    @ViewBuilder var actions: Actions
+
+    init(systemImage: String, title: String, message: String? = nil, @ViewBuilder actions: () -> Actions = { EmptyView() }) {
+        self.systemImage = systemImage
+        self.title = title
+        self.message = message
+        self.actions = actions()
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(Theme.mutedForeground)
+            Text(title).font(.headline)
+            if let message {
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.mutedForeground)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 320)
+            }
+            HStack(spacing: 8) { actions }
+                .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .padding(.horizontal, Theme.spacing)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                .strokeBorder(Theme.border, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+        )
     }
 }
 
@@ -194,46 +314,87 @@ struct LoadingView<Value, Content: View>: View {
         if let value {
             content(value)
         } else if let error {
-            ContentUnavailableView {
-                Label("Couldn't load", systemImage: "wifi.exclamationmark")
-            } description: {
-                Text(error.localizedDescription)
-            } actions: {
-                Button("Try again") { Task { await retry() } }
-                    .buttonStyle(.borderedProminent)
+            VStack {
+                EmptyState(systemImage: "wifi.exclamationmark", title: "Couldn't load", message: error.localizedDescription) {
+                    Button("Try again") { Task { await retry() } }
+                        .buttonStyle(.spoolPrimary)
+                }
             }
+            .padding(Theme.spacing)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .screenBackground()
         } else {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .screenBackground()
         }
     }
 }
 
+/// Dashboard and filament stat tile: label, big value, detail line.
 struct StatCard: View {
     let title: String
     let value: String
     var detail: String? = nil
-    var systemImage: String
+    var valueColor: Color = .primary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label(title, systemImage: systemImage)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.mutedForeground)
+                .lineLimit(1)
             Text(value)
                 .font(.title2.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(valueColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if let detail {
                 Text(detail)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.mutedForeground)
                     .lineLimit(1)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
+        .cardStyle(padding: 14)
+    }
+}
+
+/// A web-style dropdown trigger for filter menus: "All materials ⌄".
+struct FilterChip: View {
+    let title: String
+    var isActive = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title).lineLimit(1)
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(isActive ? Theme.primary : Theme.mutedForeground)
+        }
+        .font(.subheadline)
+        .foregroundStyle(Color.primary)
+        .padding(.horizontal, 12)
+        .frame(height: 34)
+        .background(isActive ? Theme.primary.opacity(0.12) : Theme.card, in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous)
+                .strokeBorder(isActive ? Theme.primary.opacity(0.5) : Theme.input)
+        )
+        .contentShape(Rectangle())
+    }
+}
+
+/// "Pin + location" line used on cards and headers.
+struct LocationLabel: View {
+    let location: String
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "mappin").imageScale(.small)
+            Text(location).lineLimit(1)
+        }
     }
 }
 

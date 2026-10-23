@@ -104,6 +104,7 @@ struct CatalogListView: View {
                     }
                 }
             }
+            .themedForm()
         }
         .navigationTitle(kind.title)
         .toolbar {
@@ -207,9 +208,10 @@ struct CatalogItemForm: View {
                 }
             }
             if let error {
-                Section { Text(error).foregroundStyle(.red) }
+                Section { Text(error).foregroundStyle(Theme.destructive) }
             }
         }
+        .themedForm()
         .navigationTitle(item == nil ? "New \(kind.singular)" : "Edit \(kind.singular)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -292,10 +294,11 @@ struct LocationsView: View {
                             newName = location.name
                             renaming = location
                         }
-                        .tint(.blue)
+                        .tint(Theme.primary)
                     }
                 }
             }
+            .themedForm()
         }
         .navigationTitle("Locations")
         .alert("Rename location", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } }), presenting: renaming) { location in

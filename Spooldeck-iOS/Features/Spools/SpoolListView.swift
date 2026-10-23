@@ -28,47 +28,58 @@ struct SpoolFilter: Hashable {
     }
 }
 
-struct SpoolRowView: View {
+/// A spool as a card, like the web's SpoolCard.
+struct SpoolCardView: View {
     let spool: SpoolRow
     var lowStock: Double?
 
+    private var isLow: Bool {
+        spool.status != .empty && lowStock.map { spool.remaining <= $0 } == true
+    }
+
     var body: some View {
-        HStack(spacing: 12) {
-            ColorSwatch(hex: spool.colorHex)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                ColorSwatch(hex: spool.colorHex, size: 40)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(spool.subtitle.isEmpty ? "Unknown" : spool.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.mutedForeground)
                     Text(spool.title)
-                        .font(.headline)
-                        .lineLimit(1)
-                    Spacer()
-                    Text(Format.grams(spool.remaining))
-                        .font(.subheadline.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(lowStock.map { spool.remaining <= $0 } == true ? .orange : .primary)
-                }
-                HStack {
-                    Text(spool.subtitle)
-                    Spacer()
-                    Text("#\(spool.code)").monospaced()
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                RemainingBar(initial: spool.initialWeight, remaining: spool.remaining, lowStock: lowStock)
-                if spool.status != .opened || spool.location != nil {
-                    HStack(spacing: 6) {
-                        if spool.status != .opened { StatusBadge(status: spool.status) }
-                        if let location = spool.location {
-                            Label(location, systemImage: "mappin")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
+                        .font(.body.weight(.medium))
+                    if spool.colorName != nil {
+                        Text(spool.filamentName)
+                            .font(.caption)
+                            .foregroundStyle(Theme.mutedForeground)
                     }
                 }
+                .lineLimit(1)
+                Spacer(minLength: 0)
+                StatusBadge(status: spool.status)
             }
+            VStack(spacing: 6) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(Format.grams(max(0, spool.remaining)))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(isLow ? Theme.destructive : .primary)
+                    Spacer()
+                    Text("of \(Format.grams(spool.initialWeight))")
+                        .font(.caption)
+                        .foregroundStyle(Theme.mutedForeground)
+                }
+                .monospacedDigit()
+                RemainingBar(initial: spool.initialWeight, remaining: spool.remaining, low: isLow)
+            }
+            HStack {
+                Text("#\(spool.code)").monospaced()
+                Spacer()
+                if let location = spool.location { LocationLabel(location: location) }
+            }
+            .font(.caption)
+            .foregroundStyle(Theme.mutedForeground)
         }
-        .padding(.vertical, 2)
+        .cardStyle()
+        .contentShape(RoundedRectangle(cornerRadius: Theme.radius))
     }
 }
 
@@ -84,53 +95,40 @@ struct SpoolListView: View {
     @State private var locations: [Location] = []
     @State private var showNewSpool = false
 
-    private let isRoot: Bool
-
     init(initialFilter: SpoolFilter? = nil) {
         _filter = State(initialValue: initialFilter ?? SpoolFilter())
-        isRoot = initialFilter == nil
     }
 
     var body: some View {
         LoadingView(value: spools, error: error, retry: load) { spools in
-            if spools.isEmpty {
-                if !query.isEmpty {
-                    ContentUnavailableView.search(text: query)
+            Screen {
+                filterBar
+                if spools.isEmpty {
+                    emptyState
                 } else {
-                    ContentUnavailableView {
-                        Label(filter.isFiltered ? "No matching spools" : "No spools yet", systemImage: "circle.circle")
-                    } description: {
-                        Text(filter.isFiltered ? "Try different filters." : "Add a spool or scan a Prusament QR code.")
-                    } actions: {
-                        if filter.isFiltered {
-                            Button("Clear filters") { filter = SpoolFilter(sort: filter.sort) }
+                    Text(summary(spools))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.mutedForeground)
+                    LazyVStack(spacing: 12) {
+                        ForEach(spools) { spool in
+                            NavigationLink(value: Route.spool(id: spool.id)) {
+                                SpoolCardView(spool: spool, lowStock: lowStock)
+                            }
+                            .buttonStyle(CardLinkStyle())
+                            .accessibilityIdentifier("spoolCard")
                         }
                     }
                 }
-            } else {
-                List(spools) { spool in
-                    NavigationLink(value: Route.spool(id: spool.id)) {
-                        SpoolRowView(spool: spool, lowStock: lowStock)
-                    }
-                }
-                .listStyle(.plain)
             }
         }
         .navigationTitle(filter.lowOnly ? "Running low" : "Spools")
-        .searchable(text: $query, prompt: "Color, brand, code, location…")
+        .searchable(text: $query, prompt: "Search color, brand, code, location…")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                filterMenu
-                Menu {
-                    Button("New spool", systemImage: "plus") { showNewSpool = true }
-                    if let spools, !spools.isEmpty {
-                        Button("Print labels for these", systemImage: "printer") {
-                            app.labelSpoolIds = spools.map(\.id)
-                        }
-                    }
-                } label: {
-                    Image(systemName: "plus")
+                if let spools, !spools.isEmpty {
+                    Button("Print labels", systemImage: "tag") { app.labelSpoolIds = spools.map(\.id) }
                 }
+                Button("Add spool", systemImage: "plus") { showNewSpool = true }
             }
         }
         .sheet(isPresented: $showNewSpool) {
@@ -151,52 +149,98 @@ struct SpoolListView: View {
         let version: Int
     }
 
-    private var filterMenu: some View {
-        Menu {
-            Picker("Sort", selection: $filter.sort) {
-                ForEach(SpoolFilter.Sort.allCases) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.menu)
+    private func summary(_ spools: [SpoolRow]) -> String {
+        let grams = spools.filter { $0.status.isActive }.reduce(0) { $0 + max(0, $1.remaining) }
+        let count = spools.count == 1 ? "1 spool" : "\(spools.count) spools"
+        return "\(count) · \(Format.grams(grams)) of filament"
+    }
 
-            Picker("Status", selection: $filter.status) {
-                Text("In stock").tag("active")
-                ForEach(SpoolStatus.allCases) { Text($0.label).tag($0.rawValue) }
-                Text("All").tag("all")
+    @ViewBuilder
+    private var emptyState: some View {
+        if !query.isEmpty {
+            EmptyState(systemImage: "magnifyingglass", title: "No results for “\(query)”", message: "Check the spelling or try a different search.")
+        } else if filter.isFiltered {
+            EmptyState(systemImage: "line.3.horizontal.decrease", title: "No matching spools", message: "Try different filters.") {
+                Button("Clear filters") { filter = SpoolFilter(sort: filter.sort) }
+                    .buttonStyle(.spoolOutline)
             }
-            .pickerStyle(.menu)
-
-            Toggle("Running low only", isOn: $filter.lowOnly)
-
-            if !materials.isEmpty {
-                Picker("Material", selection: $filter.materialId) {
-                    Text("Any material").tag(Int?.none)
-                    ForEach(materials) { Text($0.name).tag(Int?.some($0.id)) }
-                }
-                .pickerStyle(.menu)
+        } else {
+            EmptyState(systemImage: "shippingbox", title: "No spools yet", message: "Add a spool or scan a Prusament QR code.") {
+                Button("Add spool", systemImage: "plus") { showNewSpool = true }
+                    .buttonStyle(.spoolPrimary)
             }
-            if !brands.isEmpty {
-                Picker("Brand", selection: $filter.brandId) {
-                    Text("Any brand").tag(Int?.none)
-                    ForEach(brands) { Text($0.name).tag(Int?.some($0.id)) }
-                }
-                .pickerStyle(.menu)
-            }
-            if !locations.isEmpty {
-                Picker("Location", selection: $filter.location) {
-                    Text("Anywhere").tag(String?.none)
-                    ForEach(locations) { Text($0.name).tag(String?.some($0.name)) }
-                }
-                .pickerStyle(.menu)
-            }
-            if filter.isFiltered {
-                Button("Clear filters", systemImage: "xmark.circle", role: .destructive) {
-                    filter = SpoolFilter(sort: filter.sort)
-                }
-            }
-        } label: {
-            Image(systemName: filter.isFiltered ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
         }
-        .accessibilityLabel("Filter and sort")
+    }
+
+    /// Dropdowns like the web's filter row, scrolling sideways on narrow screens.
+    private var filterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                if !materials.isEmpty {
+                    Menu {
+                        Picker("Material", selection: $filter.materialId) {
+                            Text("All materials").tag(Int?.none)
+                            ForEach(materials) { Text($0.name).tag(Int?.some($0.id)) }
+                        }
+                    } label: {
+                        FilterChip(title: materials.first { $0.id == filter.materialId }?.name ?? "All materials", isActive: filter.materialId != nil)
+                    }
+                }
+                if !brands.isEmpty {
+                    Menu {
+                        Picker("Brand", selection: $filter.brandId) {
+                            Text("All brands").tag(Int?.none)
+                            ForEach(brands) { Text($0.name).tag(Int?.some($0.id)) }
+                        }
+                    } label: {
+                        FilterChip(title: brands.first { $0.id == filter.brandId }?.name ?? "All brands", isActive: filter.brandId != nil)
+                    }
+                }
+                if !locations.isEmpty {
+                    Menu {
+                        Picker("Location", selection: $filter.location) {
+                            Text("All locations").tag(String?.none)
+                            ForEach(locations) { Text($0.name).tag(String?.some($0.name)) }
+                        }
+                    } label: {
+                        FilterChip(title: filter.location ?? "All locations", isActive: filter.location != nil)
+                    }
+                }
+                Menu {
+                    Picker("Status", selection: $filter.status) {
+                        Text("In stock").tag("active")
+                        ForEach(SpoolStatus.allCases) { Text($0 == .opened ? "Open" : $0.label).tag($0.rawValue) }
+                        Text("All").tag("all")
+                    }
+                    Toggle("Running low only", isOn: $filter.lowOnly)
+                } label: {
+                    FilterChip(title: statusTitle, isActive: filter.status != "active" || filter.lowOnly)
+                }
+                Menu {
+                    Picker("Sort", selection: $filter.sort) {
+                        ForEach(SpoolFilter.Sort.allCases) { Text($0.label).tag($0) }
+                    }
+                } label: {
+                    FilterChip(title: "Sort: \(filter.sort.label.lowercased())")
+                }
+                if filter.isFiltered {
+                    Button("Clear", systemImage: "xmark") { filter = SpoolFilter(sort: filter.sort) }
+                        .buttonStyle(.spool(.ghost, compact: true))
+                }
+            }
+            .padding(.vertical, 1)
+        }
+        .scrollClipDisabled()
+    }
+
+    private var statusTitle: String {
+        let base = switch filter.status {
+        case "active": "In stock"
+        case "all": "All"
+        case "opened": "Open"
+        default: SpoolStatus(rawValue: filter.status)?.label ?? "In stock"
+        }
+        return filter.lowOnly ? "\(base) · low" : base
     }
 
     private func load() async {
@@ -229,6 +273,16 @@ struct SpoolListView: View {
         brands = await b?.items.filter { ($0.filaments ?? 0) > 0 } ?? []
         locations = await l?.locations ?? []
         lowStock = await s.map { Double($0.lowStockGrams) }
+    }
+}
+
+/// Press feedback for tappable cards: dims and shrinks slightly, like a native cell highlight.
+struct CardLinkStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.snappy(duration: 0.15), value: configuration.isPressed)
     }
 }
 

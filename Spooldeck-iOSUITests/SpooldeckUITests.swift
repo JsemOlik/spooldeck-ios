@@ -32,7 +32,7 @@ final class SpooldeckUITests: XCTestCase {
         // Spools → first spool → log usage with a localised decimal.
         app.tabBars.buttons["Spools"].tap()
         XCTAssertTrue(app.navigationBars["Spools"].waitForExistence(timeout: 5))
-        let firstSpool = app.collectionViews.cells.firstMatch
+        let firstSpool = app.buttons.matching(identifier: "spoolCard").firstMatch
         XCTAssertTrue(firstSpool.waitForExistence(timeout: 10))
         snapshot("2-spools")
         firstSpool.tap()
@@ -51,7 +51,7 @@ final class SpooldeckUITests: XCTestCase {
         app.navigationBars.buttons["Log"].tap()
         XCTAssertTrue(app.staticTexts["UI test print"].waitForExistence(timeout: 10))
 
-        app.buttons["Weigh in"].tap()
+        app.buttons["Weigh-in"].tap()
         XCTAssertTrue(app.textFields["Scale reading"].waitForExistence(timeout: 5))
         snapshot("5-weigh-in")
         app.navigationBars.buttons["Cancel"].tap()
@@ -62,11 +62,11 @@ final class SpooldeckUITests: XCTestCase {
 
         // Filaments → first filament.
         app.tabBars.buttons["Filaments"].tap()
-        let firstFilament = app.collectionViews.cells.firstMatch
+        let firstFilament = app.buttons.matching(identifier: "filamentRow").firstMatch
         XCTAssertTrue(firstFilament.waitForExistence(timeout: 10))
         snapshot("7-filaments")
         firstFilament.tap()
-        XCTAssertTrue(app.staticTexts["Stats"].waitForExistence(timeout: 10) || app.staticTexts["STATS"].exists)
+        XCTAssertTrue(app.staticTexts["Spools & purchases"].waitForExistence(timeout: 10))
         snapshot("8-filament-detail")
 
         // Scan → type a code that doesn't exist.

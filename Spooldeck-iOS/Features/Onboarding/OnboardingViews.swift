@@ -8,23 +8,9 @@ struct ServerView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    VStack(spacing: 12) {
-                        Image(systemName: "circle.circle.fill")
-                            .font(.system(size: 56))
-                            .foregroundStyle(.tint)
-                        Text("Spooldeck")
-                            .font(.largeTitle.bold())
-                        Text("Connect to your self-hosted Spooldeck to track filament from your phone.")
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .listRowBackground(Color.clear)
-                }
-
-                Section {
+            OnboardingScreen(subtitle: "Connect to your self-hosted Spooldeck to track filament from your phone.") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Server address").font(.subheadline.weight(.medium))
                     TextField("spools.example.com", text: $address)
                         .keyboardType(.URL)
                         .textContentType(.URL)
@@ -32,28 +18,18 @@ struct ServerView: View {
                         .autocorrectionDisabled()
                         .submitLabel(.go)
                         .onSubmit { Task { await connect() } }
-                } header: {
-                    Text("Server address")
-                } footer: {
-                    if let error {
-                        Text(error).foregroundStyle(.red)
-                    } else {
-                        Text("The address you open Spooldeck at in your browser. https:// is assumed unless you type http://.")
-                    }
+                        .modifier(InputStyle())
+                    Text(error ?? "The address you open Spooldeck at in your browser. https:// is assumed unless you type http://.")
+                        .font(.caption)
+                        .foregroundStyle(error == nil ? Theme.mutedForeground : Theme.destructive)
                 }
-
-                Section {
-                    Button {
-                        Task { await connect() }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            if isConnecting { ProgressView() } else { Text("Continue").bold() }
-                            Spacer()
-                        }
-                    }
-                    .disabled(address.trimmingCharacters(in: .whitespaces).isEmpty || isConnecting)
+                Button {
+                    Task { await connect() }
+                } label: {
+                    if isConnecting { ProgressView().tint(Theme.primaryForeground) } else { Text("Continue") }
                 }
+                .buttonStyle(.spool(.primary, fullWidth: true))
+                .disabled(address.trimmingCharacters(in: .whitespaces).isEmpty || isConnecting)
             }
         }
     }
@@ -83,8 +59,9 @@ struct LoginView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
+            OnboardingScreen(subtitle: "Sign in to \(app.serverURL?.host() ?? "your server").") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Username").font(.subheadline.weight(.medium))
                     TextField("Username", text: $username)
                         .textContentType(.username)
                         .textInputAutocapitalization(.never)
@@ -92,35 +69,32 @@ struct LoginView: View {
                         .focused($focus, equals: .username)
                         .submitLabel(.next)
                         .onSubmit { focus = .password }
+                        .modifier(InputStyle())
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Password").font(.subheadline.weight(.medium))
                     SecureField("Password", text: $password)
                         .textContentType(.password)
                         .focused($focus, equals: .password)
                         .submitLabel(.go)
                         .onSubmit { Task { await signIn() } }
-                } header: {
-                    Text(app.serverURL?.host() ?? "")
-                } footer: {
-                    if let error { Text(error).foregroundStyle(.red) }
-                }
-
-                Section {
-                    Button {
-                        Task { await signIn() }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            if isSigningIn { ProgressView() } else { Text("Sign in").bold() }
-                            Spacer()
-                        }
+                        .modifier(InputStyle())
+                    if let error {
+                        Text(error).font(.caption).foregroundStyle(Theme.destructive)
                     }
-                    .disabled(username.isEmpty || password.isEmpty || isSigningIn)
                 }
-
-                Section {
-                    Button("Use a different server", role: .destructive) { app.changeServer() }
+                Button {
+                    Task { await signIn() }
+                } label: {
+                    if isSigningIn { ProgressView().tint(Theme.primaryForeground) } else { Text("Sign in") }
                 }
+                .buttonStyle(.spool(.primary, fullWidth: true))
+                .disabled(username.isEmpty || password.isEmpty || isSigningIn)
+            } footer: {
+                Button("Use a different server") { app.changeServer() }
+                    .buttonStyle(.spool(.ghost, compact: true))
+                    .foregroundStyle(Theme.mutedForeground)
             }
-            .navigationTitle("Sign in")
             .onAppear { focus = username.isEmpty ? .username : .password }
         }
     }
@@ -136,5 +110,53 @@ struct LoginView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+}
+
+/// Centered logo, a short line and a card with the form, like the web login page.
+private struct OnboardingScreen<Content: View, Footer: View>: View {
+    let subtitle: String
+    @ViewBuilder let content: Content
+    @ViewBuilder let footer: Footer
+
+    init(subtitle: String, @ViewBuilder content: () -> Content, @ViewBuilder footer: () -> Footer = { EmptyView() }) {
+        self.subtitle = subtitle
+        self.content = content()
+        self.footer = footer()
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(spacing: 10) {
+                    LogoMark(size: 56)
+                    Text("Spooldeck").font(.largeTitle.weight(.semibold))
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.mutedForeground)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 48)
+                VStack(alignment: .leading, spacing: 16) { content }
+                    .cardStyle(padding: 20)
+                footer
+            }
+            .padding(.horizontal, Theme.spacing)
+            .frame(maxWidth: 440)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .screenBackground()
+    }
+}
+
+/// A bordered text input like the web's <Input>.
+struct InputStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Theme.background, in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous).strokeBorder(Theme.input))
     }
 }

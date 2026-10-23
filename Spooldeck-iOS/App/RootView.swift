@@ -30,22 +30,23 @@ struct MainTabView: View {
     var body: some View {
         @Bindable var app = app
         TabView(selection: $selection) {
-            Tab("Dashboard", systemImage: "gauge.with.dots.needle.33percent", value: 0) {
+            Tab("Dashboard", systemImage: "square.grid.2x2", value: 0) {
                 NavigationStack { DashboardView().withRoutes() }
             }
-            Tab("Spools", systemImage: "circle.circle", value: 1) {
+            Tab("Spools", systemImage: "shippingbox", value: 1) {
                 NavigationStack { SpoolListView().withRoutes() }
             }
-            Tab("Scan", systemImage: "qrcode.viewfinder", value: 2) {
-                ScanTab()
-            }
-            Tab("Filaments", systemImage: "swatchpalette", value: 3) {
+            Tab("Filaments", systemImage: "paintpalette", value: 3) {
                 NavigationStack { FilamentListView().withRoutes() }
+            }
+            Tab("Scan", systemImage: "viewfinder", value: 2) {
+                ScanTab()
             }
             Tab("Settings", systemImage: "gearshape", value: 4) {
                 NavigationStack { SettingsView().withRoutes() }
             }
         }
+        .tint(Theme.primary)
         .sheet(item: Binding(
             get: { app.labelSpoolIds.map(LabelRequest.init) },
             set: { app.labelSpoolIds = $0?.ids }

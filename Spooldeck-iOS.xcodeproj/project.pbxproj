@@ -6,8 +6,27 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		4A284117308C00B40075B1E7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4A2840E5308C00B40075B1E7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A2840EC308C00B40075B1E7;
+			remoteInfo = "Spooldeck-iOS";
+		};
+		4A284137308C00B40075B1E7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4A2840E5308C00B40075B1E7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A2840EC308C00B40075B1E7;
+			remoteInfo = "Spooldeck-iOS";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		4A2840ED308C00B40075B1E7 /* Spooldeck-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Spooldeck-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A284110308C00B40075B1E7 /* Spooldeck-iOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spooldeck-iOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A284130308C00B40075B1E7 /* Spooldeck-iOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spooldeck-iOSUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +35,30 @@
 			path = "Spooldeck-iOS";
 			sourceTree = "<group>";
 		};
+		4A284111308C00B40075B1E7 /* Spooldeck-iOSTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Spooldeck-iOSTests";
+			sourceTree = "<group>";
+		};
+		4A284131308C00B40075B1E7 /* Spooldeck-iOSUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Spooldeck-iOSUITests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		4A2840EA308C00B40075B1E7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		4A284112308C00B40075B1E7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		4A284132308C00B40075B1E7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -31,6 +70,8 @@
 			isa = PBXGroup;
 			children = (
 				4A2840EF308C00B40075B1E7 /* Spooldeck-iOS */,
+				4A284111308C00B40075B1E7 /* Spooldeck-iOSTests */,
+				4A284131308C00B40075B1E7 /* Spooldeck-iOSUITests */,
 				4A2840EE308C00B40075B1E7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -39,6 +80,8 @@
 			isa = PBXGroup;
 			children = (
 				4A2840ED308C00B40075B1E7 /* Spooldeck-iOS.app */,
+				4A284110308C00B40075B1E7 /* Spooldeck-iOSTests.xctest */,
+				4A284130308C00B40075B1E7 /* Spooldeck-iOSUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -64,6 +107,48 @@
 			productReference = 4A2840ED308C00B40075B1E7 /* Spooldeck-iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		4A284115308C00B40075B1E7 /* Spooldeck-iOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4A28411A308C00B40075B1E7 /* Build configuration list for PBXNativeTarget "Spooldeck-iOSTests" */;
+			buildPhases = (
+				4A284114308C00B40075B1E7 /* Sources */,
+				4A284112308C00B40075B1E7 /* Frameworks */,
+				4A284113308C00B40075B1E7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4A284116308C00B40075B1E7 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4A284111308C00B40075B1E7 /* Spooldeck-iOSTests */,
+			);
+			name = "Spooldeck-iOSTests";
+			productName = "Spooldeck-iOSTests";
+			productReference = 4A284110308C00B40075B1E7 /* Spooldeck-iOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4A284135308C00B40075B1E7 /* Spooldeck-iOSUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4A28413A308C00B40075B1E7 /* Build configuration list for PBXNativeTarget "Spooldeck-iOSUITests" */;
+			buildPhases = (
+				4A284134308C00B40075B1E7 /* Sources */,
+				4A284132308C00B40075B1E7 /* Frameworks */,
+				4A284133308C00B40075B1E7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4A284136308C00B40075B1E7 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4A284131308C00B40075B1E7 /* Spooldeck-iOSUITests */,
+			);
+			name = "Spooldeck-iOSUITests";
+			productName = "Spooldeck-iOSUITests";
+			productReference = 4A284130308C00B40075B1E7 /* Spooldeck-iOSUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -76,6 +161,14 @@
 				TargetAttributes = {
 					4A2840EC308C00B40075B1E7 = {
 						CreatedOnToolsVersion = 27.0;
+					};
+					4A284115308C00B40075B1E7 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 4A2840EC308C00B40075B1E7;
+					};
+					4A284135308C00B40075B1E7 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 4A2840EC308C00B40075B1E7;
 					};
 				};
 			};
@@ -94,12 +187,24 @@
 			projectRoot = "";
 			targets = (
 				4A2840EC308C00B40075B1E7 /* Spooldeck-iOS */,
+				4A284115308C00B40075B1E7 /* Spooldeck-iOSTests */,
+				4A284135308C00B40075B1E7 /* Spooldeck-iOSUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		4A2840EB308C00B40075B1E7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		4A284113308C00B40075B1E7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		4A284133308C00B40075B1E7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -112,7 +217,30 @@
 			files = (
 			);
 		};
+		4A284114308C00B40075B1E7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		4A284134308C00B40075B1E7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4A284116308C00B40075B1E7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A2840EC308C00B40075B1E7 /* Spooldeck-iOS */;
+			targetProxy = 4A284117308C00B40075B1E7 /* PBXContainerItemProxy */;
+		};
+		4A284136308C00B40075B1E7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A2840EC308C00B40075B1E7 /* Spooldeck-iOS */;
+			targetProxy = 4A284137308C00B40075B1E7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4A2840F8308C00B40075B1E7 /* Debug configuration for PBXProject "Spooldeck-iOS" */ = {
@@ -246,6 +374,10 @@
 				DEVELOPMENT_TEAM = W27K38MTQL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spooldeck;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Spooldeck uses the camera to scan spool QR codes.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Spooldeck connects to your self-hosted Spooldeck server on your local network.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -278,6 +410,10 @@
 				DEVELOPMENT_TEAM = W27K38MTQL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Spooldeck;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Spooldeck uses the camera to scan spool QR codes.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Spooldeck connects to your self-hosted Spooldeck server on your local network.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -300,6 +436,84 @@
 			};
 			name = Release;
 		};
+		4A284118308C00B40075B1E7 /* Debug configuration for PBXNativeTarget "Spooldeck-iOSTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W27K38MTQL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.jsemolik.Spooldeck-iOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Spooldeck-iOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Spooldeck-iOS";
+			};
+			name = Debug;
+		};
+		4A284119308C00B40075B1E7 /* Release configuration for PBXNativeTarget "Spooldeck-iOSTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W27K38MTQL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.jsemolik.Spooldeck-iOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Spooldeck-iOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Spooldeck-iOS";
+			};
+			name = Release;
+		};
+		4A284138308C00B40075B1E7 /* Debug configuration for PBXNativeTarget "Spooldeck-iOSUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W27K38MTQL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.jsemolik.Spooldeck-iOSUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Spooldeck-iOS";
+			};
+			name = Debug;
+		};
+		4A284139308C00B40075B1E7 /* Release configuration for PBXNativeTarget "Spooldeck-iOSUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W27K38MTQL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dev.jsemolik.Spooldeck-iOSUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Spooldeck-iOS";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -316,6 +530,22 @@
 			buildConfigurations = (
 				4A2840FB308C00B40075B1E7 /* Debug configuration for PBXNativeTarget "Spooldeck-iOS" */,
 				4A2840FC308C00B40075B1E7 /* Release configuration for PBXNativeTarget "Spooldeck-iOS" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		4A28411A308C00B40075B1E7 /* Build configuration list for PBXNativeTarget "Spooldeck-iOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A284118308C00B40075B1E7 /* Debug configuration for PBXNativeTarget "Spooldeck-iOSTests" */,
+				4A284119308C00B40075B1E7 /* Release configuration for PBXNativeTarget "Spooldeck-iOSTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		4A28413A308C00B40075B1E7 /* Build configuration list for PBXNativeTarget "Spooldeck-iOSUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A284138308C00B40075B1E7 /* Debug configuration for PBXNativeTarget "Spooldeck-iOSUITests" */,
+				4A284139308C00B40075B1E7 /* Release configuration for PBXNativeTarget "Spooldeck-iOSUITests" */,
 			);
 			defaultConfigurationName = Release;
 		};

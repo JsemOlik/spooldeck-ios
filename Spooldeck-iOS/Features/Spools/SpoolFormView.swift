@@ -10,6 +10,8 @@ struct SpoolFormView: View {
     @Environment(\.dismiss) private var dismiss
     let mode: Mode
     var onCreated: ((Int) -> Void)?
+    /// Prefills weights from a scanned OpenPrintTag.
+    var tag: OpenPrintTag? = nil
 
     @State private var filamentId: Int?
     @State private var initialWeight = ""
@@ -142,6 +144,11 @@ struct SpoolFormView: View {
             currency = settings?.currency ?? "EUR"
             filamentId = id
             applyFilamentDefaults(id)
+            if let tag {
+                if let weight = tag.fullWeight { initialWeight = Format.field(weight) }
+                if let weight = tag.emptyContainerWeight { spoolWeight = Format.field(weight) }
+                if (tag.consumedWeight ?? 0) > 0 { remaining = Format.field(tag.remainingWeight) }
+            }
         case .edit(let spool):
             filamentId = spool.filamentId
             initialWeight = Format.field(spool.initialWeight)

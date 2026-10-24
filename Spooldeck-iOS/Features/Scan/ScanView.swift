@@ -22,6 +22,7 @@ struct ScanView: View {
     @State private var message: String?
     @State private var lastScanned: (text: String, at: Date)?
     @State private var isVisible = false
+    @State private var nfcReader = NFCTagReader()
 
     private var scannerAvailable: Bool {
         DataScannerViewController.isSupported && DataScannerViewController.isAvailable
@@ -67,6 +68,17 @@ struct ScanView: View {
             Text("Point the camera at a Prusament spool QR code or a Spooldeck label.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.mutedForeground)
+
+            if NFCTagReader.isAvailable {
+                Card {
+                    Button("Scan NFC tag", systemImage: "wave.3.right") { Task { await scanNFC() } }
+                        .buttonStyle(.spool(.outline, fullWidth: true))
+                        .disabled(isResolving)
+                    Text("Reads the OpenPrintTag chip on newer Prusament and other OpenPrintTag spools.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.mutedForeground)
+                }
+            }
 
             if let message {
                 Label(message, systemImage: "exclamationmark.triangle")
@@ -121,12 +133,35 @@ struct ScanView: View {
         Task { await resolve(text) }
     }
 
-    private func resolve(_ text: String) async {
+    private func scanNFC() async {
+        message = nil
+        let tag: OpenPrintTag
+        do {
+            tag = try await nfcReader.scan()
+        } catch is CancellationError {
+            return
+        } catch {
+            message = error.localizedDescription
+            return
+        }
+        // Prusament tags carry the same spool id as the QR code, so they match or import the same way.
+        // Otherwise a tag may link to a Spooldeck label; failing both, show what's on the tag.
+        for link in [tag.prusamentURL, tag.uri].compactMap({ $0 }) {
+            if case .unknown = ScanClassifier.classify(link) { continue }
+            if await resolve(link) { return }
+        }
+        message = nil
+        path.append(.openPrintTag(tag))
+    }
+
+    /// Looks scanned text up on the server and opens the result. Returns whether it navigated.
+    @discardableResult
+    private func resolve(_ text: String) async -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !isResolving else { return }
+        guard !trimmed.isEmpty, !isResolving else { return false }
         if case .unknown = ScanClassifier.classify(trimmed) {
             message = "That code isn't a Prusament spool or a Spooldeck label."
-            return
+            return false
         }
         isResolving = true
         message = nil
@@ -138,11 +173,13 @@ struct ScanView: View {
                 if let id = result.id {
                     manualText = ""
                     path.append(.spool(id: id, logUsage: opensLogUsage))
+                    return true
                 }
             case "prusament":
                 if let url = result.url {
                     manualText = ""
                     path.append(.prusament(url: url))
+                    return true
                 }
             default:
                 message = result.error ?? "Nothing found for that code."
@@ -150,6 +187,7 @@ struct ScanView: View {
         } catch {
             message = error.localizedDescription
         }
+        return false
     }
 }
 

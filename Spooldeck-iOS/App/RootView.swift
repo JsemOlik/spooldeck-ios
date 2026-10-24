@@ -6,6 +6,7 @@ enum Route: Hashable {
     case filament(id: Int)
     case spools(filter: SpoolFilter)
     case prusament(url: String)
+    case openPrintTag(OpenPrintTag)
 }
 
 struct RootView: View {
@@ -73,6 +74,8 @@ extension View {
                 SpoolListView(initialFilter: filter)
             case .prusament(let url):
                 PrusamentImportView(url: url)
+            case .openPrintTag(let tag):
+                OpenPrintTagView(tag: tag)
             }
         }
     }

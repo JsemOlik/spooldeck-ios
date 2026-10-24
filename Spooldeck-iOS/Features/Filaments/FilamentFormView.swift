@@ -4,6 +4,8 @@ struct FilamentFormView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     let filament: Filament?
+    /// Prefills a new filament from a scanned OpenPrintTag.
+    var tag: OpenPrintTag? = nil
 
     @State private var name = ""
     @State private var brand = ""
@@ -124,7 +126,7 @@ struct FilamentFormView: View {
             }
         }
         .navigationDestination(item: $createdId) { id in
-            SpoolFormView(mode: .create(filamentId: id))
+            SpoolFormView(mode: .create(filamentId: id), tag: tag)
         }
         .task { await load() }
     }
@@ -149,6 +151,7 @@ struct FilamentFormView: View {
         brands = await b?.items.map(\.name) ?? []
         materials = await m?.items.map(\.name) ?? []
 
+        if filament == nil, let tag, name.isEmpty { prefill(from: tag) }
         guard let f = filament, name.isEmpty else { return }
         name = f.name
         brand = f.brand?.name ?? ""
@@ -169,6 +172,24 @@ struct FilamentFormView: View {
         productUrl = f.productUrl ?? ""
         imageUrl = f.imageUrl ?? ""
         rating = f.rating ?? 0
+    }
+
+    private func prefill(from tag: OpenPrintTag) {
+        name = tag.displayName
+        brand = tag.brandName ?? ""
+        material = tag.materialType ?? tag.materialAbbreviation ?? ""
+        colorName = tag.colorName ?? ""
+        colorHex = tag.colorHex ?? ""
+        diameter = Format.field(tag.diameter)
+        nominalWeight = Format.field(tag.nominalWeight ?? tag.actualWeight)
+        spoolWeight = Format.field(tag.emptyContainerWeight)
+        nozzleMin = Format.field(tag.printTempMin)
+        nozzleMax = Format.field(tag.printTempMax)
+        bedMin = Format.field(tag.bedTempMin)
+        bedMax = Format.field(tag.bedTempMax)
+        dryingTemp = Format.field(tag.dryingTemp)
+        dryingHours = Format.field(tag.dryingMinutes.map { $0 / 60 })
+        addSpoolAfter = true
     }
 
     private func save() async {

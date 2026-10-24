@@ -378,6 +378,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Spooldeck;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Spooldeck uses the camera to scan spool QR codes.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Spooldeck connects to your self-hosted Spooldeck server on your local network.";
+				INFOPLIST_KEY_NFCReaderUsageDescription = "Spooldeck reads the OpenPrintTag NFC chips on filament spools.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -414,6 +415,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Spooldeck;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Spooldeck uses the camera to scan spool QR codes.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Spooldeck connects to your self-hosted Spooldeck server on your local network.";
+				INFOPLIST_KEY_NFCReaderUsageDescription = "Spooldeck reads the OpenPrintTag NFC chips on filament spools.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
